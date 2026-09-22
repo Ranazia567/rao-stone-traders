@@ -11,19 +11,27 @@ import {
   Package,
   MapPin,
 } from 'lucide-react';
-import { api } from '../utils/api';
+import { api, FALLBACK_PRODUCTS } from '../utils/api';
 import ProductCard from '../components/ProductCard';
 import Calculator from '../components/Calculator';
 
 const Home = () => {
-  const [products, setProducts] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [products, setProducts] = useState(FALLBACK_PRODUCTS);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     api
       .get('/products?inStock=true')
-      .then(setProducts)
-      .catch(console.error)
+      .then((data) => {
+        if (Array.isArray(data) && data.length > 0) {
+          setProducts(data);
+        } else {
+          setProducts(FALLBACK_PRODUCTS);
+        }
+      })
+      .catch(() => {
+        setProducts(FALLBACK_PRODUCTS);
+      })
       .finally(() => setLoading(false));
   }, []);
 

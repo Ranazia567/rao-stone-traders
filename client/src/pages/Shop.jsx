@@ -1,13 +1,13 @@
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Layers, Filter, Search } from 'lucide-react';
-import { api } from '../utils/api';
+import { api, FALLBACK_PRODUCTS } from '../utils/api';
 import ProductCard from '../components/ProductCard';
 
 const Shop = () => {
   const [searchParams, setSearchParams] = useSearchParams();
-  const [products, setProducts] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [products, setProducts] = useState(FALLBACK_PRODUCTS);
+  const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState('');
   const activeCategory = searchParams.get('category') || '';
 
@@ -21,15 +21,30 @@ const Shop = () => {
   ];
 
   useEffect(() => {
-    setLoading(true);
     const endpoint = activeCategory
       ? `/products?category=${encodeURIComponent(activeCategory)}&inStock=true`
       : '/products?inStock=true';
 
     api
       .get(endpoint)
-      .then(setProducts)
-      .catch(console.error)
+      .then((data) => {
+        if (Array.isArray(data) && data.length > 0) {
+          setProducts(data);
+        } else {
+          setProducts(
+            activeCategory && activeCategory !== 'All'
+              ? FALLBACK_PRODUCTS.filter((p) => p.category.toLowerCase().includes(activeCategory.toLowerCase()))
+              : FALLBACK_PRODUCTS
+          );
+        }
+      })
+      .catch(() => {
+        setProducts(
+          activeCategory && activeCategory !== 'All'
+            ? FALLBACK_PRODUCTS.filter((p) => p.category.toLowerCase().includes(activeCategory.toLowerCase()))
+            : FALLBACK_PRODUCTS
+        );
+      })
       .finally(() => setLoading(false));
   }, [activeCategory]);
 
